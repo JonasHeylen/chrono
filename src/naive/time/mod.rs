@@ -752,7 +752,7 @@ impl NaiveTime {
         (hour, min, sec)
     }
 
-    pub(super) const MIN: Self = Self { secs: 0, frac: 0 };
+    pub(crate) const MIN: Self = Self { secs: 0, frac: 0 };
     pub(super) const MAX: Self = Self { secs: 23 * 3600 + 59 * 60 + 59, frac: 999_999_999 };
 }
 
