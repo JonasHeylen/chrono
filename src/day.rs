@@ -1,5 +1,7 @@
 use core::fmt;
 use core::fmt::Display;
+use core::fmt::Debug;
+use core::fmt::Write;
 
 use crate::oldtime;
 use crate::DateTime;
@@ -19,23 +21,26 @@ where
     tz: Tz,
 }
 
-impl<Tz> fmt::Debug for Day<Tz>
+impl<Tz> Debug for Day<Tz>
 where
     Tz: TimeZone + Copy + Eq + Display,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        todo!()
+    {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Debug::fmt(&self.date, f)?;
+        f.write_char(' ')?;
+        self.tz.fmt(f)
     }
 }
 
-impl<Tz> fmt::Display for Day<Tz>
+impl<Tz> Display for Day<Tz>
 where
     Tz: TimeZone + Copy + Eq + Display,
 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        todo!()
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Debug::fmt(self, f)
     }
 }
+
 
 impl<Tz> Day<Tz>
 where
@@ -120,5 +125,26 @@ mod tests {
                 .single()
                 .unwrap(),
         );
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+mod serde {
+    use core::fmt::{Display};
+    use serde::{ser};
+    use crate::{Day, TimeZone};
+
+    // Currently no `Deserialize` option as there is no generic way to create a timezone
+    // from a string representation of it. This could be added to the `TimeZone` trait in future
+
+    impl<Tz> ser::Serialize for Day<Tz> where
+    Tz: TimeZone + Copy + Eq + Display,{
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: ser::Serializer,
+        {
+            serializer.serialize_str(&self.to_string())
+        }
     }
 }
