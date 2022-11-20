@@ -1,13 +1,18 @@
+use core::convert::TryFrom;
 use core::fmt;
-use core::fmt::Display;
 use core::fmt::Debug;
+use core::fmt::Display;
 use core::fmt::Write;
+use core::ops::Add;
+use core::ops::Sub;
 
 use crate::oldtime;
 use crate::DateTime;
+use crate::Days;
 use crate::NaiveDate;
 use crate::NaiveTime;
 use crate::TimeZone;
+use oldtime::Duration;
 
 /// Represents the full range of local timestamps in the day
 ///
@@ -24,7 +29,7 @@ where
 impl<Tz> Debug for Day<Tz>
 where
     Tz: TimeZone + Copy + Eq + Display,
-    {
+{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         Debug::fmt(&self.date, f)?;
         f.write_char(' ')?;
@@ -40,7 +45,6 @@ where
         Debug::fmt(self, f)
     }
 }
-
 
 impl<Tz> Day<Tz>
 where
@@ -97,6 +101,51 @@ where
 
         panic!("Unable to calculate start time for date {} and time zone {}", self.date, self.tz)
     }
+
+    ///
+    pub fn checked_add_days(self, days: Days) -> Option<Self> {
+        if days.0 == 0 {
+            return Some(self);
+        }
+
+        i64::try_from(days.0).ok().and_then(|d| self.diff_days(d))
+    }
+
+    ///
+    pub fn checked_sub_days(self, days: Days) -> Option<Self> {
+        if days.0 == 0 {
+            return Some(self);
+        }
+
+        i64::try_from(days.0).ok().and_then(|d| self.diff_days(-d))
+    }
+
+    fn diff_days(self, days: i64) -> Option<Self> {
+        let date = self.date.checked_add_signed(Duration::days(days))?;
+        Some(Day { date, ..self })
+    }
+}
+
+impl<Tz> Add<Days> for Day<Tz>
+where
+    Tz: TimeZone + Copy + Eq + Display,
+{
+    type Output = Day<Tz>;
+
+    fn add(self, days: Days) -> Self::Output {
+        self.checked_add_days(days).unwrap()
+    }
+}
+
+impl<Tz> Sub<Days> for Day<Tz>
+where
+    Tz: TimeZone + Copy + Eq + Display,
+{
+    type Output = Day<Tz>;
+
+    fn sub(self, days: Days) -> Self::Output {
+        self.checked_sub_days(days).unwrap()
+    }
 }
 
 impl<Tz> From<DateTime<Tz>> for Day<Tz>
@@ -131,15 +180,17 @@ mod tests {
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 mod serde {
-    use core::fmt::{Display};
-    use serde::{ser};
     use crate::{Day, TimeZone};
+    use core::fmt::Display;
+    use serde::ser;
 
     // Currently no `Deserialize` option as there is no generic way to create a timezone
     // from a string representation of it. This could be added to the `TimeZone` trait in future
 
-    impl<Tz> ser::Serialize for Day<Tz> where
-    Tz: TimeZone + Copy + Eq + Display,{
+    impl<Tz> ser::Serialize for Day<Tz>
+    where
+        Tz: TimeZone + Copy + Eq + Display,
+    {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
             S: ser::Serializer,
