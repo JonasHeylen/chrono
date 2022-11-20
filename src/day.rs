@@ -1,3 +1,4 @@
+use core::cmp::Ordering;
 use core::convert::TryFrom;
 use core::fmt;
 use core::fmt::Debug;
@@ -17,10 +18,10 @@ use oldtime::Duration;
 /// Represents the full range of local timestamps in the day
 ///
 ///
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Day<Tz>
 where
-    Tz: TimeZone + Copy + Eq + Display,
+    Tz: TimeZone + Copy + Display,
 {
     date: NaiveDate,
     tz: Tz,
@@ -28,7 +29,7 @@ where
 
 impl<Tz> Debug for Day<Tz>
 where
-    Tz: TimeZone + Copy + Eq + Display,
+    Tz: TimeZone + Copy + Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         Debug::fmt(&self.date, f)?;
@@ -39,16 +40,45 @@ where
 
 impl<Tz> Display for Day<Tz>
 where
-    Tz: TimeZone + Copy + Eq + Display,
+    Tz: TimeZone + Copy + Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         Debug::fmt(self, f)
     }
 }
 
+impl<Tz> PartialOrd for Day<Tz>
+where
+    Tz: TimeZone + Copy + Display,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.date.partial_cmp(&other.date)
+    }
+}
+
+impl<Tz> Ord for Day<Tz>
+where
+    Tz: TimeZone + Copy + Display,
+{
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.date.cmp(&other.date)
+    }
+}
+
+impl<Tz> PartialEq for Day<Tz>
+where
+    Tz: TimeZone + Copy + Display,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.date.eq(&other.date)
+    }
+}
+
+impl<Tz> Eq for Day<Tz> where Tz: TimeZone + Copy + Display {}
+
 impl<Tz> Day<Tz>
 where
-    Tz: TimeZone + Copy + Eq + Display,
+    Tz: TimeZone + Copy + Display,
 {
     ///
     pub fn date(&self) -> NaiveDate {
@@ -128,7 +158,7 @@ where
 
 impl<Tz> Add<Days> for Day<Tz>
 where
-    Tz: TimeZone + Copy + Eq + Display,
+    Tz: TimeZone + Copy + Display,
 {
     type Output = Day<Tz>;
 
@@ -139,7 +169,7 @@ where
 
 impl<Tz> Sub<Days> for Day<Tz>
 where
-    Tz: TimeZone + Copy + Eq + Display,
+    Tz: TimeZone + Copy + Display,
 {
     type Output = Day<Tz>;
 
@@ -150,7 +180,7 @@ where
 
 impl<Tz> From<DateTime<Tz>> for Day<Tz>
 where
-    Tz: TimeZone + Copy + Eq + Display,
+    Tz: TimeZone + Copy + Display,
 {
     fn from(dt: DateTime<Tz>) -> Self {
         Day { date: dt.date_naive(), tz: dt.timezone() }
@@ -189,7 +219,7 @@ mod serde {
 
     impl<Tz> ser::Serialize for Day<Tz>
     where
-        Tz: TimeZone + Copy + Eq + Display,
+        Tz: TimeZone + Copy + Display,
     {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where
