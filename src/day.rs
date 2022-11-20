@@ -225,8 +225,7 @@ mod serde {
         where
             S: ser::Serializer,
         {
-            let display = self.to_string();
-            serializer.serialize_str(&display)
+            serializer.collect_str(&self)
         }
     }
 }
