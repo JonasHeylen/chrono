@@ -1,8 +1,36 @@
 use super::NaiveDateTime;
 use crate::oldtime::Duration;
 use crate::NaiveDate;
-use crate::{Datelike, FixedOffset, Utc};
+use crate::{Datelike, FixedOffset, Timelike, Utc};
 use std::i64;
+
+#[test]
+fn test_datetime_from_timestamp_millis() {
+    let timestamp_millis: i64 = 1662921288000; //Sunday, September 11, 2022 6:34:48 PM
+    let naive_datetime = NaiveDateTime::from_timestamp_millis(timestamp_millis);
+    assert!(naive_datetime.is_some());
+    assert_eq!(timestamp_millis, naive_datetime.unwrap().timestamp_millis());
+    assert_eq!(naive_datetime.unwrap().year(), 2022);
+    assert_eq!(naive_datetime.unwrap().month(), 9);
+    assert_eq!(naive_datetime.unwrap().day(), 11);
+    assert_eq!(naive_datetime.unwrap().hour(), 18);
+    assert_eq!(naive_datetime.unwrap().minute(), 34);
+    assert_eq!(naive_datetime.unwrap().second(), 48);
+    assert_eq!(naive_datetime.unwrap().timestamp_subsec_nanos(), 0);
+
+    // Negative timestamps (before the UNIX epoch) are supported as well.
+    let timestamp_millis: i64 = -2208936075000; //Mon Jan 01 1900 14:38:45 GMT+0000
+    let naive_datetime = NaiveDateTime::from_timestamp_millis(timestamp_millis);
+    assert!(naive_datetime.is_some());
+    assert_eq!(timestamp_millis, naive_datetime.unwrap().timestamp_millis());
+    assert_eq!(naive_datetime.unwrap().year(), 1900);
+    assert_eq!(naive_datetime.unwrap().month(), 1);
+    assert_eq!(naive_datetime.unwrap().day(), 1);
+    assert_eq!(naive_datetime.unwrap().hour(), 14);
+    assert_eq!(naive_datetime.unwrap().minute(), 38);
+    assert_eq!(naive_datetime.unwrap().second(), 45);
+    assert_eq!(naive_datetime.unwrap().timestamp_subsec_nanos(), 0);
+}
 
 #[test]
 fn test_datetime_from_timestamp() {
